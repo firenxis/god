@@ -34,7 +34,7 @@ module God
         attr_accessor :to_email, :to_name, :from_email, :from_name,
                       :delivery_method, :server_host, :server_port,
                       :server_auth, :server_domain, :server_user,
-                      :server_password, :sendmail_path, :sendmail_args
+                      :server_password, :sendmail_path, :sendmail_args, :enable_starttls
         attr_accessor :format
       end
 
@@ -65,7 +65,7 @@ Category: #{category}
       attr_accessor :to_email, :to_name, :from_email, :from_name,
                     :delivery_method, :server_host, :server_port,
                     :server_auth, :server_domain, :server_user,
-                    :server_password, :sendmail_path, :sendmail_args
+                    :server_password, :sendmail_path, :sendmail_args, :enable_starttls
 
       def valid?
         valid = true
@@ -110,8 +110,17 @@ Category: #{category}
           args << arg(:server_auth)
         end
 
-        Net::SMTP.start(*args) do |smtp|
-          smtp.send_message(mail, arg(:from_email), arg(:to_email))
+        if arg(:enable_starttls)
+          smtp = Net::SMTP.new(arg(:server_host),arg(:server_port))
+          smtp.enable_starttls
+        
+          smtp.start(arg(:server_host), arg(:server_user),arg(:server_password), arg(:server_auth)) do |smtp|
+            smtp.send_message(mail,arg(:from_email), arg(:to_email) )
+          end
+        else
+          Net::SMTP.start(*args) do |smtp|
+            smtp.send_message(mail, arg(:from_email), arg(:to_email))
+          end
         end
       end
 
